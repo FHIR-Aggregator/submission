@@ -4,7 +4,7 @@ import json
 from pydantic import ValidationError
 
 # Import the R4 classes
-FHIR_CLASSES = importlib.import_module('fhir.resources.R4B')
+FHIR_CLASSES = importlib.import_module("fhir.resources.R4B")
 
 
 def transform_documentreference(resource):
@@ -54,7 +54,9 @@ def transform_encounter(resource):
     dict: The transformed Encounter resource.
     """
     if "reason" in resource:
-        resource["reasonReference"] = [ref["reference"] for ref in resource.pop("reference", [])]
+        resource["reasonReference"] = [
+            ref["reference"] for ref in resource.pop("reference", [])
+        ]
     if "class" in resource:
         resource["class"] = resource["class"]["coding"][0]
     else:
@@ -95,7 +97,9 @@ def transform_imagingstudy(resource):
         for series in resource["series"]:
             if "modality" in series:
                 series["modality"] = series["modality"]["coding"][0]
-                series["modality"]["system"] = series["modality"]["system"].replace(" ", "")
+                series["modality"]["system"] = series["modality"]["system"].replace(
+                    " ", ""
+                )
     return resource
 
 
@@ -119,7 +123,9 @@ def transform_medicationadministration(resource):
         if "category" in resource:
             resource["category"] = resource["category"][0]
     if "medicationCodeableConcept" in resource:
-        resource["medicationCodeableConcept"]["coding"][0]["system"] = resource["medicationCodeableConcept"]["coding"][0]["system"].replace("'", "")
+        resource["medicationCodeableConcept"]["coding"][0]["system"] = resource[
+            "medicationCodeableConcept"
+        ]["coding"][0]["system"].replace("'", "")
     return resource
 
 
@@ -212,23 +218,43 @@ def validate_r4_resource(resource):
     bool: True if the resource is valid, False otherwise.
     """
     try:
-        klass = FHIR_CLASSES.get_fhir_model_class(resource['resourceType'])
+        klass = FHIR_CLASSES.get_fhir_model_class(resource["resourceType"])
         _ = klass.model_validate(resource)
         return True  # If no exceptions, it's valid
     except ValidationError as e:
         for error in e.errors():
             # Ignore the error about attachment.size, R4 has it as an unsignedInt, R5 has it as an integer64
-            if '.'.join([str(_) for _ in error['loc']]) == 'content.0.attachment.size':
+            if ".".join([str(_) for _ in error["loc"]]) == "content.0.attachment.size":
                 return True
         click.echo(f"Validation error: {klass} {e}\n{json.dumps(resource, indent=2)}")
         return False
 
 
 @click.command()
-@click.option('--input-ndjson', required=True, type=click.Path(exists=True), help='Path to the input NDJSON file')
-@click.option('--output-ndjson', required=True, type=click.Path(writable=True), help='Path to the output NDJSON file')
-@click.option('--validate', is_flag=True, default=True, help='Validate transformed resources for R4 compliance')
-@click.option('--stop-on-first-error', is_flag=True, default=False, help='Stop processing on the first error')
+@click.option(
+    "--input-ndjson",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to the input NDJSON file",
+)
+@click.option(
+    "--output-ndjson",
+    required=True,
+    type=click.Path(writable=True),
+    help="Path to the output NDJSON file",
+)
+@click.option(
+    "--validate",
+    is_flag=True,
+    default=True,
+    help="Validate transformed resources for R4 compliance",
+)
+@click.option(
+    "--stop-on-first-error",
+    is_flag=True,
+    default=False,
+    help="Stop processing on the first error",
+)
 def process_ndjson(input_ndjson, output_ndjson, validate, stop_on_first_error):
     """
     Process an NDJSON file to transform R5 resources to R4 equivalents.
@@ -239,7 +265,7 @@ def process_ndjson(input_ndjson, output_ndjson, validate, stop_on_first_error):
     validate (bool): Flag to validate transformed resources for R4 compliance.
     stop_on_first_error (bool): Flag to stop processing on the first error.
     """
-    with open(input_ndjson, 'r') as infile, open(output_ndjson, 'w') as outfile:
+    with open(input_ndjson, "r") as infile, open(output_ndjson, "w") as outfile:
         for line in infile:
             resource = json.loads(line.strip())
             try:
@@ -250,7 +276,7 @@ def process_ndjson(input_ndjson, output_ndjson, validate, stop_on_first_error):
                     if not validate_r4_resource(transformed_resource):
                         if stop_on_first_error:
                             exit(1)
-                outfile.write(json.dumps(transformed_resource) + '\n')
+                outfile.write(json.dumps(transformed_resource) + "\n")
             except ValueError as e:
                 click.echo(f"Error processing resource: {e}")
                 if stop_on_first_error:

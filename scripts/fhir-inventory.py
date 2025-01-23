@@ -19,14 +19,22 @@ def cli():
 
 
 def is_503_error(exception):
-    return isinstance(exception, requests.exceptions.RequestException) and exception.response.status_code == 503
+    return (
+        isinstance(exception, requests.exceptions.RequestException)
+        and exception.response.status_code == 503
+    )
 
 
-@retry(stop=stop_after_attempt(5), wait=wait_exponential(multiplier=1, min=4, max=10), retry=retry_if_exception(is_503_error))
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception(is_503_error),
+)
 def make_request(url):
     response = requests.get(url)
     response.raise_for_status()
     return response
+
 
 @cli.command()
 @click.option(
@@ -88,7 +96,11 @@ def count_resources(fhir_url):
             response = make_request(f"{fhir_url}metadata")
             if response.status_code == 200:
                 metadata = response.json()
-                resource_types = [_["type"] for _ in metadata["rest"][0]["resource"] if _["type"] not in ['DomainResource', 'Resource']]
+                resource_types = [
+                    _["type"]
+                    for _ in metadata["rest"][0]["resource"]
+                    if _["type"] not in ["DomainResource", "Resource"]
+                ]
                 for resource_type in resource_types:
                     spinner.text = f"Querying {resource_type}"
                     response = make_request(
