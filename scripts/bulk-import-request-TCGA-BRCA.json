@@ -1,0 +1,204 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "inputFormat",
+      "valueCode": "application/fhir+ndjson"
+    },
+    {
+      "name": "inputSource",
+      "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/"
+    },
+    {
+      "name": "storageDetail",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "https"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "ServiceRequest"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/ServiceRequest.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "DocumentReference"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/DocumentReference.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Procedure"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Procedure.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Specimen"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Specimen.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Observation"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Observation.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "ResearchStudy"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/ResearchStudy.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "BodyStructure"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/BodyStructure.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Condition"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Condition.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "ResearchSubject"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/ResearchSubject.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Encounter"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Encounter.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Group"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Group.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "MedicationAdministration"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/MedicationAdministration.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "ImagingStudy"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/ImagingStudy.ndjson"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "Patient"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/TCGA-BRCA/META/Patient.ndjson"
+        }
+      ]
+    }
+  ]
+}
