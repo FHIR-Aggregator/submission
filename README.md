@@ -1,4 +1,4 @@
-## Preparation Script
+## Preparing Data for the FHIR Aggregator
 
 This document provides instructions on how to use the `scripts/prep.py` utility to prepare your data for the FHIR Aggregator project.
 
@@ -35,10 +35,18 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
     ```bash
     pip install -r scripts/requirements.txt
     ```
+4. **Set up environment variables:**
+
+   Ensure you have a .env file in the root directory of the project. You can use the .env-sample file as a template:  
+   ```
+   cp .env-sample .env
+   # Edit the .env file to include your specific environment variables.
+   source .env 
+   ```
 
 ### Usage
 
-1. **Run the preparation script:**
+1. **Run the preparation script on your data:**
 
     ```bash
     python scripts/prep.py prep --help
@@ -67,9 +75,31 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
     - `reseed`: Reseeds all resource.id and references to a new UUID based on the seed value
       - `seed`: The seed value to use for the reseed operation.
 
+
+### Uploading Data to bucket
+
+- Upload the files to the `public` bucket - see scripts/upload.sh
+- Import manifest - see scripts/[hapi|gs]create-bulk-import-request.py
+   - Creates scripts/bulk-import-request-PROJECT_NAME.json
+
+### Importing Data
+* See [HAPI-import.md](HAPI-import.md) for details on loading data into the FHIR server.
+* See [Google-import.md](Google-import.md) for details on loading data into the Google FHIR server.
+
+
 ### Other Scripts
 
-- Upload the files to the bucket - see scripts/upload.sh
-- Create a import manifest - see scripts/[hapi|gs]create-bulk-import-request.py
 - Inventory the server - see scripts/fhir-inventory.py
+
+
+* get the counts of data loaded
+```bash
+python scripts/fhir-inventory.py count-resources 
+```
+
+* query resource counts:
+
+```bash
+python scripts/fhir-inventory.py count-resources
+```
 
