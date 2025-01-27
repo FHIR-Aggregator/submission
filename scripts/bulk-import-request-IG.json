@@ -1,0 +1,35 @@
+{
+  "resourceType": "Parameters",
+  "parameter": [
+    {
+      "name": "inputFormat",
+      "valueCode": "application/fhir+ndjson"
+    },
+    {
+      "name": "inputSource",
+      "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/IG/META/"
+    },
+    {
+      "name": "storageDetail",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "https"
+        }
+      ]
+    },
+    {
+      "name": "input",
+      "part": [
+        {
+          "name": "type",
+          "valueCode": "SearchParameter"
+        },
+        {
+          "name": "url",
+          "valueUri": "https://storage.googleapis.com/fhir-aggregator-public/IG/META/part-of-search-parameter.ndjson"
+        }
+      ]
+    }
+  ]
+}
