@@ -112,23 +112,31 @@ def validate(resource, fhir_version, *args, **kwargs):
     klass = klasses.get_fhir_model_class(resource["resourceType"])
     try:
         klass.model_validate(resource)
-        IDS.append(f"{resource['resourceType']}/{resource['id']}")
-        for _ in nested_lookup("reference", resource):
-            if isinstance(_, str):
-                REFERENCES.append(_)
-            elif isinstance(_, dict):
-                # https://www.hl7.org/fhir/medicationrequest-definitions.html#MedicationRequest.medication
-                # is a reference to a Medication resource https://www.hl7.org/fhir/references.html#CodeableReference
-                # so it has a reference.reference form, strip it out
-                REFERENCES.append(_["reference"])
-            else:
-                raise ValueError(f"Invalid reference type: {type(_)}")
-        return resource
-    except ValidationError as e:
-        click.echo(
-            f"Validation error: {fhir_version} {klass} {e}\n{json.dumps(resource, indent=2)}"
-        )
-        exit(1)
+    except (ValidationError, AttributeError) as e:
+        ignore = False
+        # # ignore the error about attachment.size, R4 has it as an unsignedInt, R5 has it as an integer64
+        # if e.errors():
+        #     errors = e.errors()
+        #     if len(errors) == 1 and 'loc' in e.errors()[0] and e.errors()[0]['loc'] == ('content', 0, 'attachment', 'size'):
+        #         ignore = True
+        if not ignore:
+            click.echo(
+                f"Validation error: {fhir_version} {klass} {e}\n{json.dumps(resource, indent=2)}"
+            )
+            exit(1)
+
+    IDS.append(f"{resource['resourceType']}/{resource['id']}")
+    for _ in nested_lookup("reference", resource):
+        if isinstance(_, str):
+            REFERENCES.append(_)
+        elif isinstance(_, dict):
+            # https://www.hl7.org/fhir/medicationrequest-definitions.html#MedicationRequest.medication
+            # is a reference to a Medication resource https://www.hl7.org/fhir/references.html#CodeableReference
+            # so it has a reference.reference form, strip it out
+            REFERENCES.append(_["reference"])
+        else:
+            raise ValueError(f"Invalid reference type: {type(_)}")
+    return resource
 
 
 def reseed(resource, seed, *args, **kwargs):
@@ -183,7 +191,7 @@ def prep(input_path, output_path, transformers, seed):
     if not pathlib.Path(output_path).exists():
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-    fhir_version = "R4" if "r4" in transformers.lower else "R5"  # default to R5
+    fhir_version = "R4" if "r4" in transformers.lower() else "R5"  # default to R5
 
     assert fhir_version in ["R4", "R5"], f"Invalid FHIR version: {fhir_version}"
 
@@ -512,7 +520,7 @@ def create_assay_refactor_docs(
             context["related"].append(
                 {"reference": f"{assay_dict['resourceType']}/{assay_dict['id']}"}
             )
-            context["related"].extend(specimen_references)
+            context["related"].extend([{"reference": _} for _ in specimen_references])
 
         # ensure mime type is set correctly
         update_mime_type(doc)
