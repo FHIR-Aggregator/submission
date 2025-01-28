@@ -17,11 +17,28 @@ def transform_documentreference(resource):
     Returns:
     dict: The transformed DocumentReference resource.
     """
-    del resource["version"]
+    if "version" in resource:
+        del resource["version"]
     if "content" in resource:
         for content in resource["content"]:
             if "profile" in content:
                 content["format"] = content.pop("profile")[0]["valueCoding"]
+            if "attachment" in content and "size" in content["attachment"]:
+                if "extension" not in resource:
+                    resource["extension"] = []
+                resource["extension"].append(
+                    {
+                        "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+                        "valueQuantity": {
+                            "value": int(content["attachment"]["size"]),
+                            "unit": "bytes",
+                            "system": "http://unitsofmeasure.org",
+                            "code": "bytes",
+                        },
+                    }
+                )
+                del content["attachment"]["size"]
+
     if "subject" in resource and "reference" in resource["subject"]:
         if "Specimen" in resource["subject"]["reference"]:
             return None
@@ -178,6 +195,20 @@ def transform_specimen(resource):
     return resource
 
 
+def transform_medication(resource):
+    """
+    Transform a Medication resource from R5 to R4.
+
+    Parameters:
+    resource (dict): The Medication resource to transform.
+    """
+    if "code" in resource and "coding" in resource["code"]:
+        resource["code"]["coding"][0]["system"] = resource["code"]["coding"][0][
+            "system"
+        ].replace("'", "")
+    return resource
+
+
 def dispatch_transformation(resource: dict, *args, **kwargs) -> dict | None:
     """
     Dispatch the transformation of a resource based on its resourceType.
@@ -195,6 +226,7 @@ def dispatch_transformation(resource: dict, *args, **kwargs) -> dict | None:
         "Group": transform_group,
         "ImagingStudy": transform_imagingstudy,
         "MedicationAdministration": transform_medicationadministration,
+        "Medication": transform_medication,
         "ResearchStudy": transform_researchstudy,
         "ResearchSubject": transform_researchsubject,
         "Specimen": transform_specimen,
