@@ -23,10 +23,9 @@ def bulk_import(bucket_path):
     # retrieve the bucket name and project name from the bucket path given structure gs://<bucket-name>/R4/<project-name>
     assert path_parts[0] == "gs:", path_parts
     assert path_parts[1] == "", path_parts
-    assert path_parts[3] == 'R4', path_parts
+    assert path_parts[3] == "R4", path_parts
     bucket_name = path_parts[2]
     project_name = path_parts[4]
-
 
     assert bucket_name, bucket_path.split("/")
     assert project_name, bucket_path.split("/")
@@ -57,7 +56,9 @@ def bulk_import(bucket_path):
         f.write(': "${LOCATION:?Need to set CLUSTER_NAME}"\n')
 
         for _ in ndjson_files:
-            f.write(f"gcloud healthcare fhir-stores import gcs $FHIR_STORE_ID --dataset=$DATASET_ID --location=$LOCATION --content-structure=resource --async --gcs-uri={_}\n")
+            f.write(
+                f"gcloud healthcare fhir-stores import gcs $FHIR_STORE_ID --dataset=$DATASET_ID --location=$LOCATION --content-structure=resource --async --gcs-uri={_}\n"
+            )
 
     print(f"Manifest written to {output_file}")
 

@@ -203,8 +203,11 @@ def transform_medication(resource):
     resource (dict): The Medication resource to transform.
     """
     if "code" in resource and "coding" in resource["code"]:
-        resource["code"]["coding"][0]["system"] = resource["code"]["coding"][0]["system"].replace("'", "")
+        resource["code"]["coding"][0]["system"] = resource["code"]["coding"][0][
+            "system"
+        ].replace("'", "")
     return resource
+
 
 def dispatch_transformation(resource: dict, *args, **kwargs) -> dict | None:
     """
