@@ -213,6 +213,7 @@ def transform_imaging_study(resource):
             del resource["collection"]["procedure"]
     return resource
 
+
 def transform_medication(resource):
     """
     Transform a Medication resource from R5 to R4.

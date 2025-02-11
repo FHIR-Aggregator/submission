@@ -11,7 +11,9 @@ def tree() -> defaultdict:
     return defaultdict(tree)
 
 
-def extract_coding_values(resource: dict[str, Any], code_dict: dict[str, Any] | None) -> dict[str, Any]:
+def extract_coding_values(
+    resource: dict[str, Any], code_dict: dict[str, Any] | None
+) -> dict[str, Any]:
     """
     Extracts coding values from `coding` and maintains a count dictionary.
 
@@ -35,7 +37,10 @@ def extract_coding_values(resource: dict[str, Any], code_dict: dict[str, Any] | 
         for coding in coding_list:
             if "display" in coding:
                 if coding["display"] not in code_dict[key]:
-                    code_dict[key][coding["display"]] = {"count": 0, "valueCoding": coding}
+                    code_dict[key][coding["display"]] = {
+                        "count": 0,
+                        "valueCoding": coding,
+                    }
                 code_dict[key][coding["display"]]["count"] += 1
 
     return code_dict
@@ -77,7 +82,9 @@ def extract_coding_values(resource: dict[str, Any], code_dict: dict[str, Any] | 
 #     return code_dict, category_dict
 
 
-def extract_extension_values(resource: dict[str, Any], extension_dict: dict[str, Any] | None) -> dict[str, Any]:
+def extract_extension_values(
+    resource: dict[str, Any], extension_dict: dict[str, Any] | None
+) -> dict[str, Any]:
     """
     Extracts values from `extension.value[x]` fields and maintains a count dictionary.
 
@@ -109,30 +116,54 @@ def extract_extension_values(resource: dict[str, Any], extension_dict: dict[str,
             for coding in extension["valueCodeableConcept"]["coding"]:
                 if "display" in coding:
                     if coding["display"] not in extension_dict[key]:
-                        extension_dict[key][coding["display"]] = {"count": 0, "valueCoding": coding}
+                        extension_dict[key][coding["display"]] = {
+                            "count": 0,
+                            "valueCoding": coding,
+                        }
                     extension_dict[key][coding["display"]]["count"] += 1
         elif "valueCoding" in extension:
             for coding in extension["valueCoding"]:
                 if "display" in coding:
                     if coding["display"] not in extension_dict[key]:
-                        extension_dict[key][coding["display"]] = {"count": 0, "valueCoding": coding}
+                        extension_dict[key][coding["display"]] = {
+                            "count": 0,
+                            "valueCoding": coding,
+                        }
                     extension_dict[key][coding["display"]]["count"] += 1
         elif "valueCode" in extension:
             if extension["valueCode"] not in extension_dict[key]:
-                extension_dict[key][extension["valueCode"]] = {"count": 0, "valueCode": extension["valueCode"]}
+                extension_dict[key][extension["valueCode"]] = {
+                    "count": 0,
+                    "valueCode": extension["valueCode"],
+                }
             extension_dict[key][extension["valueCode"]]["count"] += 1
         elif "valueString" in extension:
             if extension["valueString"] not in extension_dict[key]:
-                extension_dict[key][extension["valueString"]] = {"count": 0, "valueString": extension["valueString"]}
+                extension_dict[key][extension["valueString"]] = {
+                    "count": 0,
+                    "valueString": extension["valueString"],
+                }
             extension_dict[key][extension["valueString"]]["count"] += 1
         elif "valueQuantity" in extension:
             if "range" not in extension_dict[key]:
-                extension_dict[key] = {"range": {"min": sys.maxsize, "max": -sys.maxsize - 1}}
-            if extension["valueQuantity"]["value"] < extension_dict[key]["range"]["min"]:
-                extension_dict[key]["range"]["min"] = extension["valueQuantity"]["value"]
+                extension_dict[key] = {
+                    "range": {"min": sys.maxsize, "max": -sys.maxsize - 1}
+                }
+            if (
+                extension["valueQuantity"]["value"]
+                < extension_dict[key]["range"]["min"]
+            ):
+                extension_dict[key]["range"]["min"] = extension["valueQuantity"][
+                    "value"
+                ]
                 # print(key, 'min', extension_dict[key]["min"])
-            if extension["valueQuantity"]["value"] > extension_dict[key]["range"]["max"]:
-                extension_dict[key]["range"]["max"] = extension["valueQuantity"]["value"]
+            if (
+                extension["valueQuantity"]["value"]
+                > extension_dict[key]["range"]["max"]
+            ):
+                extension_dict[key]["range"]["max"] = extension["valueQuantity"][
+                    "value"
+                ]
                 # print(key, 'max', extension_dict[key]["max"])
         else:
             continue
@@ -172,13 +203,13 @@ def create_observation_component(code_dict, extension_dict):
                             "code": key,
                             "display": key,
                         },
-                        next(iter(value.values()))['valueCoding']
+                        next(iter(value.values()))["valueCoding"],
                     ]
                 },
-                "valueInteger": next(iter(value.values()))['count'],
+                "valueInteger": next(iter(value.values()))["count"],
             }
             for key, value in code_dict.items()
-        ]
+        ],
     }
     extension_components = []
     for path, value_dict in extension_dict.items():
@@ -199,7 +230,6 @@ def create_observation_component(code_dict, extension_dict):
                             "code": path,
                             "display": path,
                         },
-
                     ]
                 },
                 # "extension": [
@@ -218,9 +248,16 @@ def create_observation_component(code_dict, extension_dict):
                         break
                 if not value_x:
                     if sorted(value.keys()) == sorted(("min", "max")):
-                        value_x = {f"valueRange": {"low": {"value": value["min"]}, "high": {"value": value["max"]}}}
+                        value_x = {
+                            f"valueRange": {
+                                "low": {"value": value["min"]},
+                                "high": {"value": value["max"]},
+                            }
+                        }
                     else:
-                        raise ValueError(f"Unexpected value type: {value} no {['count', 'range']}")
+                        raise ValueError(
+                            f"Unexpected value type: {value} no {['count', 'range']}"
+                        )
             if not value_x:
                 value_x = {"valueInteger": v}
             # xform from defaultdict back to dict
@@ -233,8 +270,9 @@ def create_observation_component(code_dict, extension_dict):
 
 class VocabularyCollector:
     """Create a histogram of display values for a resource type."""
+
     coding_dict = None
-    extension_dict = defaultdict(int)
+    extension_dict: Any = defaultdict(int)
 
     def collect(self, resource: dict[str, Any]) -> dict[str, Any]:
         """Collect display values from a resource."""
@@ -269,6 +307,7 @@ class VocabularyCollector:
                 "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
             }
         )
-        observation["id"] = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}"))
+        observation["id"] = str(
+            uuid.uuid5(uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}")
+        )
         return observation
-

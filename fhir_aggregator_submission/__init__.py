@@ -22,7 +22,9 @@ def find_key_with_path(data, key_to_find, ignored_keys=[]):
                 if key == key_to_find:
                     found_ignored_key_in_extension = False
                     if "extension" in new_path:
-                        extension_url = get_value_from_path(data, new_path[:-2] + ["url"])
+                        extension_url = get_value_from_path(
+                            data, new_path[:-2] + ["url"]
+                        )
                         if extension_url:
                             for k in ignored_keys:
                                 if k in extension_url:
