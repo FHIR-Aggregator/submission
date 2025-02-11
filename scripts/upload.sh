@@ -18,4 +18,4 @@ fi
 FULL_PATH=$1
 PROJECT_NAME=$2
 
-CLOUDSDK_PYTHON=python3.10 gcloud storage cp ${FULL_PATH}/*.ndjson gs://fhir-aggregator-public/${PROJECT_NAME}/META/ --content-type=application/fhir+ndjson --project=ncpi-rti-p01-007-ohsu
+CLOUDSDK_PYTHON=python3.10 gcloud storage cp ${FULL_PATH}/*.ndjson gs://fhir-aggregator-public/R4/${PROJECT_NAME}/META/ --content-type=application/fhir+ndjson --project=ncpi-rti-p01-007-ohsu
