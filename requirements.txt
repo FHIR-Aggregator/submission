@@ -5,3 +5,5 @@ halo
 nested-lookup
 tenacity
 orjson
+requests
+pyyaml
