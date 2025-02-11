@@ -92,7 +92,9 @@ class Emitters:
                 )
                 # print("Opening file", self._files[resource["resourceType"]].name, file=sys.stderr)
 
-            self._files[resource["resourceType"]].write(orjson.dumps(resource, option=orjson.OPT_APPEND_NEWLINE))
+            self._files[resource["resourceType"]].write(
+                orjson.dumps(resource, option=orjson.OPT_APPEND_NEWLINE)
+            )
 
     def close(self):
         """Close the open files."""
@@ -174,9 +176,11 @@ def validate_references(*args, **kwargs):
 
 VOCABULARY_COLLECTOR = VocabularyCollector()
 
+
 def vocabulary(resource, *args, **kwargs):
     """Collect the vocabulary."""
     return VOCABULARY_COLLECTOR.collect(resource)
+
 
 @cli.command(name="prep")
 @click.argument("input_path", required=True, type=click.Path(exists=True))
@@ -304,13 +308,15 @@ def prep(input_path, output_path, transformers, seed):
                         and last_resource_type != resource["resourceType"]
                     ):
                         spinner.succeed(last_resource_type)
-                        spinner.start(f"Processing {resource["resourceType"]}")
+                        spinner.start(f"Processing {resource['resourceType']}")
                     last_resource_type = resource["resourceType"]
 
                     emitted.add(resource["resourceType"])
 
         if "vocabulary" in transformers:
-            vocabulary_observation = VOCABULARY_COLLECTOR.to_observation(research_study_id)
+            vocabulary_observation = VOCABULARY_COLLECTOR.to_observation(
+                research_study_id
+            )
             validate(vocabulary_observation, fhir_version)
             emitters.emit(vocabulary_observation)
             spinner.succeed("Vocabulary Observation")
@@ -319,7 +325,9 @@ def prep(input_path, output_path, transformers, seed):
             spinner.text = "Validating references"
             validate_references()
             spinner.succeed("Validation complete")
-    spinner.succeed(f"👍 Processing complete. All resources emitted. See output directory {output_path}")
+    spinner.succeed(
+        f"👍 Processing complete. All resources emitted. See output directory {output_path}"
+    )
     emitters.close()
 
 
