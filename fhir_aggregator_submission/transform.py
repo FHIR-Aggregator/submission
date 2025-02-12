@@ -195,6 +195,25 @@ def transform_specimen(resource):
     return resource
 
 
+def transform_imaging_study(resource):
+    """
+    Cleanup transform_observation.
+
+    Parameters:
+    resource (dict): The Specimen resource to transform.
+
+    Returns:
+    dict: The transformed Specimen resource.
+    """
+    if "processing" in resource:
+        for process in resource["processing"]:
+            process["procedure"] = process.pop("method")
+    if "collection" in resource:
+        if "procedure" in resource["collection"]:
+            del resource["collection"]["procedure"]
+    return resource
+
+
 def transform_medication(resource):
     """
     Transform a Medication resource from R5 to R4.
