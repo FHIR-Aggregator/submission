@@ -6,4 +6,5 @@ scripts/gs-bulk-import-request-TCGA-HNSC.sh
 scripts/gs-bulk-import-request-TCGA-KIRC.sh 
 scripts/gs-bulk-import-request-TCGA-LUAD.sh 
 scripts/gs-bulk-import-request-TCGA-LUSC.sh 
+scripts/gs-configure-search.sh
 

@@ -8,7 +8,7 @@ The Google Healthcare API only supports R4, so we need to transform the data fro
 Note: The transformation is based on the differences between R5 and R4 observed in the TCGA data.
 See scripts/prep.py `r4` transformer for details.
 
-
+The individual commands below are captured here: `scripts/gs-import-all.sh`
 
 
 ```bash
