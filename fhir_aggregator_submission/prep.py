@@ -1,5 +1,4 @@
 import importlib
-import json
 import pathlib
 import sys
 from urllib.parse import urlparse
@@ -7,15 +6,17 @@ import uuid
 import mimetypes
 from typing import Generator, Any
 from click_default_group import DefaultGroup
+import orjson
 
 import click
 from halo import Halo
 from nested_lookup import nested_lookup, nested_alter
 from pydantic import ValidationError
 
-from transform import dispatch_transformation
+from fhir_aggregator_submission.transform import dispatch_transformation
+from fhir_aggregator_submission.vocabulary import VocabularyCollector
 
-DEFAULT_TRANSFORMERS = "assay,part-of,validate"
+DEFAULT_TRANSFORMERS = "assay,r4,part-of,vocabulary,validate"
 
 # Import the R4 classes
 FHIR_R4_CLASSES = importlib.import_module("fhir.resources.R4B")
@@ -58,7 +59,7 @@ def apply_part_of(resource, research_study_id, *args, **kwargs):
 
     extension = [
         {
-            "url": "http://example.org/fhir/StructureDefinition/part-of-study",
+            "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
             "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
         }
     ]
@@ -87,13 +88,18 @@ class Emitters:
         if resource:
             if resource["resourceType"] not in self._files:
                 self._files[resource["resourceType"]] = open(
-                    self._output_path / f"{resource['resourceType']}.ndjson", "w"
+                    self._output_path / f"{resource['resourceType']}.ndjson", "wb"
                 )
-            self._files[resource["resourceType"]].write(json.dumps(resource) + "\n")
+                # print("Opening file", self._files[resource["resourceType"]].name, file=sys.stderr)
+
+            self._files[resource["resourceType"]].write(
+                orjson.dumps(resource, option=orjson.OPT_APPEND_NEWLINE)
+            )
 
     def close(self):
         """Close the open files."""
         for file in self._files.values():
+            # print("Closing file", file.name, file=sys.stderr)
             file.close()
         self._files = {}
 
@@ -112,6 +118,8 @@ def validate(resource, fhir_version, *args, **kwargs):
     klass = klasses.get_fhir_model_class(resource["resourceType"])
     try:
         klass.model_validate(resource)
+        if "id" not in resource:
+            raise AttributeError(f"Resource {resource['resourceType']} has no id")
     except (ValidationError, AttributeError) as e:
         ignore = False
         # # ignore the error about attachment.size, R4 has it as an unsignedInt, R5 has it as an integer64
@@ -121,7 +129,7 @@ def validate(resource, fhir_version, *args, **kwargs):
         #         ignore = True
         if not ignore:
             click.echo(
-                f"Validation error: {fhir_version} {klass} {e}\n{json.dumps(resource, indent=2)}"
+                f"Validation error: {fhir_version} {klass} {e}\n{orjson.dumps(resource, option=orjson.OPT_INDENT_2).decode('utf-8')}"
             )
             exit(1)
 
@@ -166,6 +174,14 @@ def validate_references(*args, **kwargs):
         exit(1)
 
 
+VOCABULARY_COLLECTOR = VocabularyCollector()
+
+
+def vocabulary(resource, *args, **kwargs):
+    """Collect the vocabulary."""
+    return VOCABULARY_COLLECTOR.collect(resource)
+
+
 @cli.command(name="prep")
 @click.argument("input_path", required=True, type=click.Path(exists=True))
 @click.argument("output_path", required=True, type=click.Path())
@@ -204,7 +220,7 @@ def prep(input_path, output_path, transformers, seed):
 
     research_study = pathlib.Path(input_path) / "ResearchStudy.ndjson"
     with open(research_study, "r") as research_study_file:
-        research_study = json.loads(research_study_file.readline().strip())
+        research_study = orjson.loads(research_study_file.readline().strip())
         research_study_id = research_study["id"]
 
     transformer_map = {
@@ -212,6 +228,7 @@ def prep(input_path, output_path, transformers, seed):
         "r4": dispatch_transformation,
         "validate": validate,
         "reseed": reseed,
+        "vocabulary": vocabulary,
     }
     known_transformers = set(transformer_map.keys())
     for k in known_transformers:
@@ -233,7 +250,7 @@ def prep(input_path, output_path, transformers, seed):
         )
         exit(1)
 
-    emitted = []
+    emitted = set()
     click.echo(f"Transformers: {transformers}", file=sys.stderr)
     with Halo(
         text="Processing",
@@ -245,8 +262,11 @@ def prep(input_path, output_path, transformers, seed):
         # assay is a special case, it requires a set of resources to work ['DocumentReference', 'Group', 'Specimen']
         last_resource_type = None
         if "assay" in transformers:
+            spinner.text = "Processing Assay"
             for resource in create_assays(fhir_version, input_path):
+                # load the transformer function from the map
                 for transformer in transformer_map.values():
+                    # run it with variable args
                     resource = transformer(
                         resource=resource,
                         research_study_id=research_study_id,
@@ -264,13 +284,15 @@ def prep(input_path, output_path, transformers, seed):
                     spinner.start()
                 last_resource_type = resource["resourceType"]
                 spinner.text = f"Processing {last_resource_type}"
-            emitted.extend(["DocumentReference", "Group"])
+            emitted.add("DocumentReference")
+            emitted.add("Group")
         for resource in pathlib.Path(input_path).glob("*.ndjson"):
             if resource.stem in emitted:
                 continue
             with open(resource, "r") as infile:
+                spinner.text = f"Processing {resource}"
                 for line in infile:
-                    resource = json.loads(line.strip())
+                    resource = orjson.loads(line.strip())
                     for transformer in transformer_map.values():
                         resource = transformer(
                             resource=resource,
@@ -286,16 +308,26 @@ def prep(input_path, output_path, transformers, seed):
                         and last_resource_type != resource["resourceType"]
                     ):
                         spinner.succeed(last_resource_type)
-                        spinner.start()
+                        spinner.start(f"Processing {resource['resourceType']}")
                     last_resource_type = resource["resourceType"]
-                    spinner.text = f"Processing {last_resource_type}"
 
-                    emitted.append(resource["resourceType"])
-        spinner.succeed("Processing complete")
+                    emitted.add(resource["resourceType"])
+
+        if "vocabulary" in transformers:
+            vocabulary_observation = VOCABULARY_COLLECTOR.to_observation(
+                research_study_id
+            )
+            validate(vocabulary_observation, fhir_version)
+            emitters.emit(vocabulary_observation)
+            spinner.succeed("Vocabulary Observation")
+
         if "validate" in transformers:
             spinner.text = "Validating references"
             validate_references()
             spinner.succeed("Validation complete")
+    spinner.succeed(
+        f"👍 Processing complete. All resources emitted. See output directory {output_path}"
+    )
     emitters.close()
 
 
@@ -303,14 +335,14 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
     """Create assays from the input files [DocumentReference, Group, Specimen]."""
     document_reference = pathlib.Path(input_path) / "DocumentReference.ndjson"
     with open(document_reference, "r") as doc_file:
-        document_references = [json.loads(line.strip()) for line in doc_file]
+        document_references = [orjson.loads(line.strip()) for line in doc_file]
     with open(pathlib.Path(input_path) / "Group.ndjson", "r") as group_file:
-        groups: list[dict] = [json.loads(line.strip()) for line in group_file]
+        groups: list[dict] = [orjson.loads(line.strip()) for line in group_file]
     specimen = pathlib.Path(input_path) / "Specimen.ndjson"
     with open(specimen, "r") as specimen_file:
         specimens = {
             spec["id"]: spec
-            for spec in (json.loads(line.strip()) for line in specimen_file)
+            for spec in (orjson.loads(line.strip()) for line in specimen_file)
         }
     # Index document references by group
     document_references_by_group: dict[str, list[dict]] = {}

@@ -53,7 +53,7 @@ def bulk_import(bucket_path):
         # see .env-sample file
         f.write(': "${FHIR_STORE_ID:?Need to set FHIR_STORE_ID}"\n')
         f.write(': "${DATASET_ID:?Need to set DATASET_ID}"\n')
-        f.write(': "${LOCATION:?Need to set CLUSTER_NAME}"\n')
+        f.write(': "${LOCATION:?Need to set LOCATION}"\n')
 
         for _ in ndjson_files:
             f.write(
