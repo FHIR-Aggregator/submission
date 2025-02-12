@@ -10,6 +10,7 @@ See scripts/prep.py `r4` transformer for details.
 
 The individual commands below are captured here: `scripts/gs-import-all.sh`
 
+A script to generate the import commands is available at `fhir_aggregator_submission/gs-create-bulk-import-request.py`
 
 ```bash
 #  the base URL for the FHIR store

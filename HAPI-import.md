@@ -2,6 +2,9 @@
 
 * Start a job to load from a `public` bucket
 
+A script to generate the import commands is available at `fhir_aggregator_submission/hapi-create-bulk-import-request.py`
+
+
 ```bash
 
 curl -vvvv $AUTH --header "X-Upsert-Extistence-Check: disabled" --header "Content-Type: application/fhir+json" --header "Prefer: respond-async"  -X POST $FHIR_BASE'/$import' --data @scripts/bulk-import-request-PROJECT_NAME.json 
