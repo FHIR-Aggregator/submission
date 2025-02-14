@@ -75,7 +75,8 @@ def transform_encounter(resource):
             ref["reference"] for ref in resource.pop("reference", [])
         ]
     if "class" in resource:
-        resource["class"] = resource["class"]["coding"][0]
+        if "coding" in resource["class"]:
+            resource["class"] = resource["class"]["coding"][0]
     else:
         resource["class"] = {"code": "NONAC", "display": "inpatient non-acute"}
     resource["status"] = "finished"
@@ -92,9 +93,12 @@ def transform_group(resource):
     Returns:
     dict: The transformed Group resource.
     """
-    del resource["membership"]
-    resource["actual"] = True
-    resource["type"] = "person"
+    if "membership" in resource:
+        del resource["membership"]
+    if "actual" not in resource:
+        resource["actual"] = True
+    if "type" not in resource:
+        resource["type"] = "person"
     return resource
 
 
@@ -171,7 +175,8 @@ def transform_researchsubject(resource):
     Returns:
     dict: The transformed ResearchSubject resource.
     """
-    resource["individual"] = resource.pop("subject")
+    if "subject" in resource:
+        resource["individual"] = resource.pop("subject")
     resource["status"] = "on-study"
     return resource
 
@@ -188,7 +193,8 @@ def transform_specimen(resource):
     """
     if "processing" in resource:
         for process in resource["processing"]:
-            process["procedure"] = process.pop("method")
+            if "method" in process:
+                process["procedure"] = process.pop("method")
     if "collection" in resource:
         if "procedure" in resource["collection"]:
             del resource["collection"]["procedure"]

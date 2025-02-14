@@ -197,7 +197,13 @@ def vocabulary(resource, *args, **kwargs):
     default=None,
     help="Reseed all references with the new seed",
 )
-def prep(input_path, output_path, transformers, seed):
+@click.option(
+    "--fhir-version",
+    required=False,
+    default='R5',
+    help="Validate this version of FHIR resources",
+)
+def prep(input_path, output_path, transformers, seed, fhir_version):
     """Run a set of transformations on the input META directory.
 
     \b
@@ -207,7 +213,8 @@ def prep(input_path, output_path, transformers, seed):
     if not pathlib.Path(output_path).exists():
         pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
 
-    fhir_version = "R4" if "r4" in transformers.lower() else "R5"  # default to R5
+    if "r4" in transformers.lower():
+        fhir_version = "R4"
 
     assert fhir_version in ["R4", "R5"], f"Invalid FHIR version: {fhir_version}"
 
