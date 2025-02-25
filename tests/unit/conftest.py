@@ -19,6 +19,7 @@ def research_study(research_study_id):
         ],
     }
 
+
 @fixture
 def patients(research_study_id):
     return [
@@ -28,7 +29,9 @@ def patients(research_study_id):
             "extension": [
                 {
                     "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
-                    "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
+                    "valueReference": {
+                        "reference": f"ResearchStudy/{research_study_id}"
+                    },
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
@@ -65,7 +68,9 @@ def patients(research_study_id):
             "extension": [
                 {
                     "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
-                    "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
+                    "valueReference": {
+                        "reference": f"ResearchStudy/{research_study_id}"
+                    },
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",

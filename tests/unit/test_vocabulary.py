@@ -6,7 +6,7 @@ import pandas as pd
 from fhir_aggregator_submission.vocabulary import (
     extract_coding_values,
     extract_extension_values,
-    VocabularyCollector
+    VocabularyCollector,
 )
 
 
@@ -17,25 +17,28 @@ def test_vocabulary_collector(patients, research_study):
         collector.collect(patient)
 
     observations = collector.to_observations()
-    print([_['extension'] for _ in observations])
+    print([_["extension"] for _ in observations])
     assert len(observations) == 1
     observation = observations[0]
     assert observation["resourceType"] == "Observation"
     assert observation["code"]["coding"][0]["code"] == "vocabulary"
 
     from fhir_query import vocabulary
+
     bundle = {"entry": [{"resource": observation}, {"resource": research_study}]}
     simplified = vocabulary.vocabulary_simplifier(bundle)
     df = pd.DataFrame(simplified)
     df.to_csv(sys.stdout, sep="\t", index=False)
 
-    row = df.loc[df['extension_url'] == 'http://hl7.org/fhir/SearchParameter/patient-extensions-Patient-age' ]
-    row_dict = row.to_dict(orient='records')[0]
+    row = df.loc[
+        df["extension_url"]
+        == "http://hl7.org/fhir/SearchParameter/patient-extensions-Patient-age"
+    ]
+    row_dict = row.to_dict(orient="records")[0]
     print(row_dict)
 
-    assert row_dict['low'] == 55
-    assert row_dict['high'] == 63
-
+    assert row_dict["low"] == 55
+    assert row_dict["high"] == 63
 
 
 def test_vocabulary_patient(patients):

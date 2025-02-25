@@ -200,7 +200,7 @@ def vocabulary(resource, *args, **kwargs):
 @click.option(
     "--fhir-version",
     required=False,
-    default='R5',
+    default="R5",
     help="Validate this version of FHIR resources",
 )
 def prep(input_path, output_path, transformers, seed, fhir_version):

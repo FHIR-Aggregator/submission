@@ -262,7 +262,7 @@ def create_observation_component(code_dict, extension_dict):
 
 def get_research_study_id(resource: dict[str, Any]) -> str:
     """Get the ResearchStudy ID from a resource."""
-    assert 'extension' in resource, f"Resource {resource} does not have an extension"
+    assert "extension" in resource, f"Resource {resource} does not have an extension"
     reference = next(
         iter(
             [
@@ -274,7 +274,9 @@ def get_research_study_id(resource: dict[str, Any]) -> str:
         ),
         None,
     )
-    assert reference, f"Resource {resource} does not have a reference to a ResearchStudy"
+    assert (
+        reference
+    ), f"Resource {resource} does not have a reference to a ResearchStudy"
     return reference.split("/")[-1]
 
 
@@ -297,10 +299,15 @@ class VocabularyCollector:
     def collect(self, resource: dict[str, Any]) -> dict[str, Any]:
         """Collect display values from a resource."""
         research_study_id = get_research_study_id(resource)
-        coding_dict, extension_dict = self.research_study_vocabularies[research_study_id]
+        coding_dict, extension_dict = self.research_study_vocabularies[
+            research_study_id
+        ]
         coding_dict = extract_coding_values(resource, coding_dict)
         extension_dict = extract_extension_values(resource, extension_dict)
-        self.research_study_vocabularies[research_study_id] = coding_dict, extension_dict
+        self.research_study_vocabularies[research_study_id] = (
+            coding_dict,
+            extension_dict,
+        )
         return resource
 
     def to_observations(self) -> list[dict[str, Any]]:
@@ -311,18 +318,25 @@ class VocabularyCollector:
 
         """
         observations = []
-        for research_study_id, (coding_dict, extension_dict) in self.research_study_vocabularies.items():
+        for research_study_id, (
+            coding_dict,
+            extension_dict,
+        ) in self.research_study_vocabularies.items():
             observation = create_observation_component(coding_dict, extension_dict)
             observation["focus"] = [{"reference": f"ResearchStudy/{research_study_id}"}]
             observation["extension"] = observation.get("extension", [])
             observation["extension"].append(
                 {
                     "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
-                    "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
+                    "valueReference": {
+                        "reference": f"ResearchStudy/{research_study_id}"
+                    },
                 }
             )
             observation["id"] = str(
-                uuid.uuid5(uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}")
+                uuid.uuid5(
+                    uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}"
+                )
             )
             observations.append(observation)
         return observations
