@@ -96,14 +96,6 @@ def extract_extension_values(
         Dict[str, int]: A dictionary with extension values as keys and their counts as values.
     """
 
-    # for ext in resource.get("extension", []):
-    #     v = next(iter([ext[k] for k in ext.keys() if k.startswith("value")]), None)
-    #     if isinstance(v, dict):
-    #         v = "|".join([str(_) for _ in v.values()])
-    #     extension_dict[ext["url"] + "|" + str(v)] += 1
-    #
-    # return extension_dict
-
     if not extension_dict:
         extension_dict = tree()
 
@@ -268,46 +260,69 @@ def create_observation_component(code_dict, extension_dict):
     return observation_dict
 
 
+def get_research_study_id(resource: dict[str, Any]) -> str:
+    """Get the ResearchStudy ID from a resource."""
+    assert 'extension' in resource, f"Resource {resource} does not have an extension"
+    reference = next(
+        iter(
+            [
+                ext["valueReference"]["reference"]
+                for ext in resource["extension"]
+                if ext["url"]
+                == "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+            ]
+        ),
+        None,
+    )
+    assert reference, f"Resource {resource} does not have a reference to a ResearchStudy"
+    return reference.split("/")[-1]
+
+
+def make_dicts() -> tuple[dict | None, dict]:
+    """Create default dictionaries for coding and extension values."""
+    coding_dict = None
+    extension_dict: Any = defaultdict(int)
+    return coding_dict, extension_dict
+
+
 class VocabularyCollector:
     """Create a histogram of display values for a resource type."""
 
-    coding_dict = None
-    extension_dict: Any = defaultdict(int)
+    research_study_vocabularies: dict[str, tuple[dict, dict]]
+
+    def __init__(self):
+        """Initialize the VocabularyCollector."""
+        self.research_study_vocabularies = defaultdict(make_dicts)
 
     def collect(self, resource: dict[str, Any]) -> dict[str, Any]:
         """Collect display values from a resource."""
-        self.coding_dict = extract_coding_values(resource, self.coding_dict)
-        self.extension_dict = extract_extension_values(resource, self.extension_dict)
+        research_study_id = get_research_study_id(resource)
+        coding_dict, extension_dict = self.research_study_vocabularies[research_study_id]
+        coding_dict = extract_coding_values(resource, coding_dict)
+        extension_dict = extract_extension_values(resource, extension_dict)
+        self.research_study_vocabularies[research_study_id] = coding_dict, extension_dict
         return resource
 
-    # def to_parameters(self, research_study_id: str) -> dict[str, Any]:
-    #     """Convert the collected data into a FHIR Parameters resource."""
-    #     parameters = {
-    #         "resourceType": "Parameters",
-    #         "parameter": [
-    #             {"name": "researchStudyId", "valueString": research_study_id},
-    #             {"name": "code", "valueInteger": self.code_dict},
-    #             {"name": "category", "valueInteger": self.category_dict},
-    #             {"name": "extension", "valueInteger": self.extension_dict},
-    #         ],
-    #     }
-    #     return parameters
+    def to_observations(self) -> list[dict[str, Any]]:
+        """Convert the collected data into a FHIR Observation resource.
 
-    def to_observation(self, research_study_id: str) -> dict[str, Any]:
-        """Convert the collected data into a FHIR Observation resource."""
-        observation = create_observation_component(
-            self.coding_dict, self.extension_dict
-        )
-        observation["focus"] = [{"reference": f"ResearchStudy/{research_study_id}"}]
-        observation["extension"] = observation.get("extension", [])
+        Returns:
+            list[dict]: A FHIR Observation resource - one per ResearchStudy observed.
 
-        observation["extension"].append(
-            {
-                "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
-                "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
-            }
-        )
-        observation["id"] = str(
-            uuid.uuid5(uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}")
-        )
-        return observation
+        """
+        observations = []
+        for research_study_id, (coding_dict, extension_dict) in self.research_study_vocabularies.items():
+            observation = create_observation_component(coding_dict, extension_dict)
+            observation["focus"] = [{"reference": f"ResearchStudy/{research_study_id}"}]
+            observation["extension"] = observation.get("extension", [])
+            observation["extension"].append(
+                {
+                    "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
+                    "valueReference": {"reference": f"ResearchStudy/{research_study_id}"},
+                }
+            )
+            observation["id"] = str(
+                uuid.uuid5(uuid.NAMESPACE_DNS, f"vocabulary-collector-{research_study_id}")
+            )
+            observations.append(observation)
+        return observations

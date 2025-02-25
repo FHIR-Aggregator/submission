@@ -321,11 +321,9 @@ def prep(input_path, output_path, transformers, seed, fhir_version):
                     emitted.add(resource["resourceType"])
 
         if "vocabulary" in transformers:
-            vocabulary_observation = VOCABULARY_COLLECTOR.to_observation(
-                research_study_id
-            )
-            validate(vocabulary_observation, fhir_version)
-            emitters.emit(vocabulary_observation)
+            for vocabulary_observation in VOCABULARY_COLLECTOR.to_observations():
+                validate(vocabulary_observation, fhir_version)
+                emitters.emit(vocabulary_observation)
             spinner.succeed("Vocabulary Observation")
 
         if "validate" in transformers:

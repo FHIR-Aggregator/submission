@@ -1,3 +1,4 @@
 pytest
 respx
 pytest-asyncio
+git+https://github.com/FHIR-Aggregator/fhir-query.git
