@@ -181,6 +181,27 @@ def vocabulary(resource, *args, **kwargs):
     """Collect the vocabulary."""
     return VOCABULARY_COLLECTOR.collect(resource)
 
+def extract_researchstudy_id(entity: dict) -> str:
+    """
+    Extract the ResearchStudy ID from the 'part-of-study' extension in a DocumentReference resource.
+
+    Parameters:
+        entity (dict): A DocumentReference resource as a dictionary.
+
+    Returns:
+        str: The extracted ResearchStudy ID (without the "ResearchStudy/" prefix) if found,
+             otherwise an empty string.
+    """
+    part_of_study_url = "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    extensions = entity.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == part_of_study_url:
+            reference = ext.get("valueReference", {}).get("reference", "")
+            if reference.startswith("ResearchStudy/"):
+                return reference.split("ResearchStudy/")[1]
+            return reference
+    return ""
+
 
 @cli.command(name="prep")
 @click.argument("input_path", required=True, type=click.Path(exists=True))
@@ -349,6 +370,14 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
             spec["id"]: spec
             for spec in (orjson.loads(line.strip()) for line in specimen_file)
         }
+
+    if document_references:
+        first_doc = document_references[0]
+        research_study_id = extract_researchstudy_id(first_doc)
+        print(f"First DocumentReference ID: {first_doc.get('id')} references ResearchStudy ID: {research_study_id}")
+    else:
+        print("No DocumentReference found.")
+
     # Index document references by group
     document_references_by_group: dict[str, list[dict]] = {}
     for doc in document_references:
@@ -393,6 +422,7 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
             patient_reference,
             specimen_references,
             assay_documents,
+            research_study_id,
             fhir_version,
         )
         assay_dict["extension"] = group.get("extension", [])
@@ -401,6 +431,7 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
     groups = [group for group in groups if group["id"] not in groups_with_specimen]
     # find documents that have a specimen as subject
     for doc in document_references:
+        research_study_id = extract_researchstudy_id(doc)
         if doc["subject"]["reference"].startswith("Specimen/"):
             specimen_references = []
             specimen_id = doc["subject"]["reference"].split("/")[1]
@@ -416,6 +447,7 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
                 patient_reference,
                 specimen_references,
                 assay_documents,
+                research_study_id,
                 fhir_version,
             )
             assert doc["subject"]["reference"].startswith(
@@ -467,6 +499,7 @@ def create_assay_refactor_docs(
     patient_reference: str,
     specimen_references: list[str],
     assay_documents: list[dict],
+    research_study_id: str,
     fhir_version="R4",
 ) -> dict:
     """
@@ -522,6 +555,19 @@ def create_assay_refactor_docs(
         assay_dict["code"]["concept"] = {}
         assay_dict["code"]["concept"]["coding"] = assay_dict["code"]["coding"]
         del assay_dict["code"]["coding"]
+
+    assay_dict.setdefault("extension", [])
+
+    part_of_study_url = "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    researchstudy_reference = f"ResearchStudy/{research_study_id}"
+    part_of_study_extension = {
+        "url": part_of_study_url,
+        "valueReference": {"reference": researchstudy_reference},
+    }
+
+    if not any(ext.get("url") == part_of_study_url for ext in assay_dict["extension"]):
+        assay_dict["extension"].append(part_of_study_extension)
+
 
     # TODO - move this to its own function
     # now modify the document.subject to the patient and add the assay to the context.related
