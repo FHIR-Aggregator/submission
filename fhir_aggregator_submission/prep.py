@@ -181,6 +181,7 @@ def vocabulary(resource, *args, **kwargs):
     """Collect the vocabulary."""
     return VOCABULARY_COLLECTOR.collect(resource)
 
+
 def extract_researchstudy_id(entity: dict) -> str:
     """
     Extract the ResearchStudy ID from the 'part-of-study' extension in a DocumentReference resource.
@@ -192,7 +193,9 @@ def extract_researchstudy_id(entity: dict) -> str:
         str: The extracted ResearchStudy ID (without the "ResearchStudy/" prefix) if found,
              otherwise an empty string.
     """
-    part_of_study_url = "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    part_of_study_url = (
+        "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    )
     extensions = entity.get("extension", [])
     for ext in extensions:
         if ext.get("url") == part_of_study_url:
@@ -374,7 +377,9 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
     if document_references:
         first_doc = document_references[0]
         research_study_id = extract_researchstudy_id(first_doc)
-        print(f"First DocumentReference ID: {first_doc.get('id')} references ResearchStudy ID: {research_study_id}")
+        print(
+            f"First DocumentReference ID: {first_doc.get('id')} references ResearchStudy ID: {research_study_id}"
+        )
     else:
         print("No DocumentReference found.")
 
@@ -558,7 +563,9 @@ def create_assay_refactor_docs(
 
     assay_dict.setdefault("extension", [])
 
-    part_of_study_url = "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    part_of_study_url = (
+        "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    )
     researchstudy_reference = f"ResearchStudy/{research_study_id}"
     part_of_study_extension = {
         "url": part_of_study_url,
@@ -567,7 +574,6 @@ def create_assay_refactor_docs(
 
     if not any(ext.get("url") == part_of_study_url for ext in assay_dict["extension"]):
         assay_dict["extension"].append(part_of_study_extension)
-
 
     # TODO - move this to its own function
     # now modify the document.subject to the patient and add the assay to the context.related
