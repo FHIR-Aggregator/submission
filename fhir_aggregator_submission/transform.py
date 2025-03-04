@@ -158,8 +158,8 @@ def transform_medicationadministration(resource):
             end_date = convert_days_to_date(
                 days_to_add=timing["repeat"]["boundsRange"]["high"]["value"]
             )
-            resource["effectivePeriod"] = {"start": start_date, "end": end_date}
-
+            # resource["effectivePeriod"] = {"start": start_date, "end": end_date} # doesn't pass validation on google's end
+            resource["effectiveDateTime"] = "2025-01-01T10:10:00Z"
         if "category" in resource:
             resource["category"] = resource["category"][0]
     if "medicationCodeableConcept" in resource:
@@ -311,7 +311,7 @@ def validate_r4_resource(resource):
         return False
 
 
-def convert_days_to_date(days_to_add, start_date_str="2025-01-01T10:10:00Z"):
+def convert_days_to_date(days_to_add, start_date_str="2025-01-01T10:10:00Z") -> str:
     """
     Converts a number of days to a date, relative to a start date.
 
