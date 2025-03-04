@@ -424,7 +424,9 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
         assay_id = group["id"]  # for now, use the group id as the assay id
         # get part-of-study reference from group
         research_study_id = extract_researchstudy_id(group)
-        assert research_study_id, f"Group ID: {assay_id} does not a reference to a ResearchStudy"
+        assert (
+            research_study_id
+        ), f"Group ID: {assay_id} does not a reference to a ResearchStudy"
 
         assay_dict = create_assay_refactor_docs(
             assay_id,
@@ -571,7 +573,9 @@ def create_assay_refactor_docs(
         "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
     )
 
-    assert research_study_id, f"Assay ID: {assay_id} doesn't have a reference to ResearchStudy"
+    assert (
+        research_study_id
+    ), f"Assay ID: {assay_id} doesn't have a reference to ResearchStudy"
 
     researchstudy_reference = f"ResearchStudy/{research_study_id}"
     part_of_study_extension = {
