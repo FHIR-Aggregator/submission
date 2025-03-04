@@ -607,8 +607,10 @@ def create_assay_refactor_docs(
         else:
             # make it a R4B document
             # these fields don't exist in R4B
-            del doc["version"]
-            del doc["content"][0]["profile"]
+            if "version" in doc.keys():
+                del doc["version"]
+            if "profile" in doc["content"][0].keys():
+                del doc["content"][0]["profile"]
 
             # set reference to Assay in context.related
             if "context" not in doc:

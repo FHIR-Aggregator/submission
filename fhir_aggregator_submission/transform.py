@@ -2,6 +2,8 @@ import importlib
 import click
 import json
 from pydantic import ValidationError
+from datetime import datetime, timedelta
+
 
 # Import the R4 classes
 FHIR_CLASSES = importlib.import_module("fhir.resources.R4B")
@@ -140,13 +142,31 @@ def transform_medicationadministration(resource):
             resource["medicationCodeableConcept"] = _medication.pop("concept")
         else:
             resource["medicationReference"] = _medication.pop("reference")
-        resource["effectiveDateTime"] = resource.pop("occurenceDateTime")
+        if "occurrenceDateTime" in resource.keys():
+            resource["effectiveDateTime"] = resource.pop("occurrenceDateTime")
+        if "occurenceDateTime" in resource.keys():
+            resource["effectiveDateTime"] = resource.pop(
+                "occurenceDateTime"
+            )  # (misspelled in R5)
+        if "occurenceTiming" in resource.keys():
+            timing = resource.pop(
+                "occurenceTiming"
+            )  # temp fix - don't have type Timing in R4 (misspelled in R5)
+            start_date = convert_days_to_date(
+                days_to_add=timing["repeat"]["boundsRange"]["low"]["value"]
+            )
+            end_date = convert_days_to_date(
+                days_to_add=timing["repeat"]["boundsRange"]["high"]["value"]
+            )
+            resource["effectivePeriod"] = {"start": start_date, "end": end_date}
+
         if "category" in resource:
             resource["category"] = resource["category"][0]
     if "medicationCodeableConcept" in resource:
         resource["medicationCodeableConcept"]["coding"][0]["system"] = resource[
             "medicationCodeableConcept"
         ]["coding"][0]["system"].replace("'", "")
+
     return resource
 
 
@@ -285,6 +305,22 @@ def validate_r4_resource(resource):
                 return True
         click.echo(f"Validation error: {klass} {e}\n{json.dumps(resource, indent=2)}")
         return False
+
+
+def convert_days_to_date(days_to_add, start_date_str="2025-01-01T10:10:00Z"):
+    """
+    Converts a number of days to a date, relative to a start date.
+
+    Args:
+        start_date_str (str): The start date in '%Y-%m-%dT%H:%M:%SZ' format.
+        days_to_add (int): The number of days to subtract of the start date.
+
+    Returns:
+        str: The resulting date in '%Y-%m-%dT%H:%M:%SZ' format ex. 2025-01-01T10:10:00Z
+    """
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%dT%H:%M:%SZ")
+    new_date = start_date - timedelta(days=days_to_add)
+    return new_date.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @click.command()
