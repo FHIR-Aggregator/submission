@@ -182,6 +182,10 @@ def transform_researchstudy(resource):
     """
     if "name" in resource:
         resource.pop("name")
+
+    if "status" in resource and resource["status"] == "open":
+        resource["status"] = "active"
+
     return resource
 
 
