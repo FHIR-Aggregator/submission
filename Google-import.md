@@ -29,6 +29,32 @@ curl -X POST \
 
 ```
 
+## For Windows users
+Attempting to do the above line in cmd/command prompt can prove finnicky and annoying. The best alternative is to use **PowerShell's** *Invoke-WebRequest* functionality. Proceed as follows.
+
+Establish a jsonPayload here-string.
+```powershell
+$jsonPayload = @"
+{ "contentStructure": "RESOURCE", "gcsSource" { "uri" : "gs://fhir-aggregator-public/MY-R4-PROJECT/META/*.ndjson"}}
+"@
+```
+
+Establish a headers dictionary.
+```powershell
+$headers = @{
+  "Authorization" = "Bearer $(gcloud auth application-default print-access-token)"
+  "Content-Type" = "application/json; charset=utf-8"
+}
+```
+
+Use Invoke-WebRequest to put it all together.
+```powershell
+Invoke-WebRequest -Uri "https://healthcare.googleapis.com/v1beta1/projects/$GOOGLE_PROJECT/locations/$GOOGLE_LOCATION/datasets/$GOOGLE_DATASET/fhirStores/$GOOGLE_DATASTORE:import" `
+-Method POST `
+-Headers $headers `
+-Body $jsonPayload 
+```
+
 ## Query the data
 
 ```bash
