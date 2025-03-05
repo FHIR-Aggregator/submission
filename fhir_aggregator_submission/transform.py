@@ -148,18 +148,36 @@ def transform_medicationadministration(resource):
             resource["effectiveDateTime"] = resource.pop(
                 "occurenceDateTime"
             )  # (misspelled in R5)
-        if "occurenceTiming" in resource.keys():
-            timing = resource.pop(
-                "occurenceTiming"
-            )  # temp fix - don't have type Timing in R4 (misspelled in R5)
-            start_date = convert_days_to_date(
-                days_to_add=timing["repeat"]["boundsRange"]["low"]["value"]
-            )
-            end_date = convert_days_to_date(
-                days_to_add=timing["repeat"]["boundsRange"]["high"]["value"]
-            )
-            # resource["effectivePeriod"] = {"start": start_date, "end": end_date} # doesn't pass validation on google's end
-            resource["effectiveDateTime"] = "2025-01-01T10:10:00Z"
+        if "occurenceTiming" in resource:
+            timing = resource.pop("occurenceTiming")
+
+            try:
+                low_value = int(timing["repeat"]["boundsRange"]["low"]["value"])
+                high_value = int(timing["repeat"]["boundsRange"]["high"]["value"])
+            except (KeyError, ValueError, TypeError) as e:
+                raise ValueError(
+                    "Low or high value for days is missing or invalid: " + str(e)
+                )
+
+            date_low_str = convert_days_to_date(low_value)
+            date_high_str = convert_days_to_date(high_value)
+
+            date_low = datetime.strptime(date_low_str, "%Y-%m-%dT%H:%M:%SZ")
+            date_high = datetime.strptime(date_high_str, "%Y-%m-%dT%H:%M:%SZ")
+
+            # effectivePeriod has to have start <= end
+            effective_start = min(date_low, date_high).strftime("%Y-%m-%dT%H:%M:%SZ")
+            effective_end = max(date_low, date_high).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+            if effective_start and effective_end:
+                resource["effectivePeriod"] = {
+                    "start": effective_start,
+                    "end": effective_end,
+                }
+            else:
+                # fallback placeholder if dates are not valid
+                resource["effectiveDateTime"] = "2025-01-01T10:10:00Z"
+
         if "category" in resource:
             resource["category"] = resource["category"][0]
     if "medicationCodeableConcept" in resource:
