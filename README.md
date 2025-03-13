@@ -49,20 +49,20 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
 1. **Run the preparation script on your data:**
 
     ```bash
-    python scripts/prep.py prep --help
-      Usage: prep.py prep [OPTIONS] INPUT_PATH OUTPUT_PATH
-      
-        Run a set of transformations on the input META directory.
-      
-        INPUT_PATH META directory containing the input NDJSON files
-        OUTPUT_PATH the output META directory
-      
-      Options:
-        --transformers TEXT  CSV Transformation steps.  Known transformations:
-                             [assay,part-of,r4,validate,validate_references,
-                             reseed], default:assay,part-of,validate
-        --seed TEXT          Reseed all references with the new seed
-        --help               Show this message and exit.
+    fa_submission prep --help
+   Usage: fa_submit prep [OPTIONS] INPUT_PATH OUTPUT_PATH
+   
+     Run a set of transformations on the input META directory.
+   
+     INPUT_PATH META directory containing the input NDJSON files
+     OUTPUT_PATH the output META directory
+   
+   Options:
+     --transformers TEXT  CSV Transformation steps.  Known transformations:
+                          [assay,part-of,r4,validate,validate_references,
+                          reseed], default:assay,r4,part-of,vocabulary,validate
+     --seed TEXT          Reseed all references with the new seed
+     --help               Show this message and exit.
    
     ```
 
@@ -81,9 +81,13 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
 - Upload the files to the `public` bucket - see scripts/upload.sh
 - Import manifest - see scripts/[hapi|gs]create-bulk-import-request.py
    - Creates scripts/bulk-import-request-PROJECT_NAME.json
+   - To run the upload, use the following command:
+     ```bash
+     scripts/upload-all.sh
+     ```
 
 ### Importing Data
-* See [HAPI-import.md](HAPI-import.md) for details on loading data into the FHIR server.
+* (deprecated (for now))See [HAPI-import.md](HAPI-import.md) for details on loading data into the FHIR server.
 * See [Google-import.md](Google-import.md) for details on loading data into the Google FHIR server.
 
 
@@ -96,10 +100,5 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
 ```bash
 python scripts/fhir-inventory.py count-resources 
 ```
-
-* query resource counts:
-
-```bash
-python scripts/fhir-inventory.py count-resources
-```
+ 
 

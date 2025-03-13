@@ -23,9 +23,12 @@ def bulk_import(bucket_path):
     # retrieve the bucket name and project name from the bucket path given structure gs://<bucket-name>/R4/<project-name>
     assert path_parts[0] == "gs:", path_parts
     assert path_parts[1] == "", path_parts
-    assert path_parts[3] == "R4", path_parts
-    bucket_name = path_parts[2]
-    project_name = path_parts[4]
+    if path_parts[3] == "R4":
+        bucket_name = path_parts[2]
+        project_name = path_parts[4]
+    else:
+        bucket_name = path_parts[2]
+        project_name = path_parts[3]
 
     assert bucket_name, bucket_path.split("/")
     assert project_name, bucket_path.split("/")

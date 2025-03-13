@@ -7,3 +7,5 @@ tenacity
 orjson
 requests
 pyyaml
+fhir-aggregator-client
+pandas
