@@ -186,23 +186,26 @@ def create_observation_component(code_dict, extension_dict):
                 }
             ]
         },
-        "component": [
-            {
+        "component": []
+    }
+
+    for path, value_dict in code_dict.items():
+        for coding in value_dict.values():
+            component = {
                 "code": {
                     "coding": [
                         {
                             "system": "http://fhir-aggregator.org/fhir/CodeSystem/vocabulary/path",
-                            "code": key,
-                            "display": key,
+                            "code": path,
+                            "display": path,
                         },
-                        next(iter(value.values()))["valueCoding"],
+                        coding["valueCoding"],
                     ]
                 },
-                "valueInteger": next(iter(value.values()))["count"],
+                "valueInteger": coding["count"],
             }
-            for key, value in code_dict.items()
-        ],
-    }
+            observation_dict["component"].append(component)
+
     extension_components = []
     for path, value_dict in extension_dict.items():
         path_components = path.strip().split("~")
@@ -224,12 +227,7 @@ def create_observation_component(code_dict, extension_dict):
                         },
                     ]
                 },
-                # "extension": [
-                #     {
-                #         "url": "http://fhir-aggregator.org/fhir/StructureDefinition/vocabulary-collector-extension/path",
-                #         "valueString":  path
-                #     }
-                # ]
+
             }
             v = value
             value_x = None

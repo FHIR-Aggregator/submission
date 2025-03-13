@@ -1,5 +1,6 @@
 import json
 import sys
+from collections import defaultdict
 
 import pandas as pd
 
@@ -110,7 +111,9 @@ def test_vocabulary_document_reference_extension(document_references):
     extension_dict = None
     for resource in document_references:
         extension_dict = extract_extension_values(resource, extension_dict)
-    assert extension_dict == {}, "Should return empty dict if no coding values found"
+    assert extension_dict == {
+        'DocumentReference.extension~https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size': {
+            'range': {'min': 12345, 'max': 56789}}}, "Should return expected values"
 
 
 def test_vocabulary_document_reference(document_references):
@@ -121,3 +124,36 @@ def test_vocabulary_document_reference(document_references):
     assert (
         sorted(coding_dict.keys()) == expected_values
     ), "Should return expected_values"
+    assert sorted(coding_dict['DocumentReference.type'].keys()) == ['TSV', 'VCF'], "expected values"
+
+
+def test_vocabulary_collector_document_references(document_references, research_study):
+    collector = VocabularyCollector()
+    for document_reference in document_references:
+        # print(patient['extension'])
+        collector.collect(document_reference)
+
+    observations = collector.to_observations()
+
+    from pprint import pprint
+    pprint(observations)
+
+    assert len(observations) == 1
+    by_path = defaultdict(list)
+    observation = observations[0]
+    for component in observation["component"]:
+        for coding in component["code"]["coding"]:
+            if coding["system"] == "http://fhir-aggregator.org/fhir/CodeSystem/vocabulary/path":
+                by_path[coding["code"]].append(component)
+    assert len(by_path['DocumentReference.type']) == 2, ("expected 2 DocumentReference.type", by_path['DocumentReference.type'])
+
+    from fhir_query import vocabulary
+
+    bundle = {"link": [{"url": "http://example.com"}], "entry": [{"resource": observation}, {"resource": research_study}]}
+    simplified = vocabulary.vocabulary_simplifier(bundle)
+    codes = [_['code'] for _ in simplified if _['code'] in ['VCF', 'TSV']]
+    print(codes)
+    assert sorted(codes) == ['TSV', 'VCF'], "expected values"
+    paths = [_['path'] for _ in simplified if _['code'] in ['VCF', 'TSV']]
+    assert paths == ['DocumentReference.type', 'DocumentReference.type'], "expected paths"
+

@@ -20,6 +20,92 @@ def research_study(research_study_id):
     }
 
 
+# @fixture
+# def document_references(research_study_id):
+#     return [
+#         {
+#             "extension": [
+#                 {
+#                     "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
+#                     "valueReference": {
+#                         "reference": f"ResearchStudy/{research_study_id}"
+#                     }
+#                 },
+#                 {
+#                     "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+#                     "valueQuantity": {
+#                         "code": "bytes",
+#                         "system": "http://unitsofmeasure.org",
+#                         "unit": "bytes",
+#                         "value": 476875
+#                     }
+#                 }
+#             ],
+#             "id": "cd620014-a827-504f-8c44-72f3a482d519",
+#             "meta": {
+#                 "lastUpdated": "2025-03-11T17:41:03.239025+00:00",
+#                 "tag": [
+#                     {
+#                         "code": "SUBSETTED",
+#                         "system": "http://hl7.org/fhir/v3/ObservationValue"
+#                     }
+#                 ],
+#                 "versionId": "MTc0MTcxNDg2MzIzOTAyNTAwMA"
+#             },
+#             "resourceType": "DocumentReference",
+#             "type": {
+#                 "coding": [
+#                     {
+#                         "code": "VCF",
+#                         "display": "VCF",
+#                         "system": "https://gdc.cancer.gov/data_format"
+#                     }
+#                 ]
+#             }
+#         },
+#         {
+#             "extension": [
+#                 {
+#                     "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
+#                     "valueReference": {
+#                         "reference": f"ResearchStudy/{research_study_id}"
+#                     }
+#                 },
+#                 {
+#                     "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+#                     "valueQuantity": {
+#                         "code": "bytes",
+#                         "system": "http://unitsofmeasure.org",
+#                         "unit": "bytes",
+#                         "value": 6767634
+#                     }
+#                 }
+#             ],
+#             "id": "396af5e8-f6a0-51e6-8e83-81cf4c231a3e",
+#             "meta": {
+#                 "lastUpdated": "2025-03-11T17:41:03.191986+00:00",
+#                 "tag": [
+#                     {
+#                         "code": "SUBSETTED",
+#                         "system": "http://hl7.org/fhir/v3/ObservationValue"
+#                     }
+#                 ],
+#                 "versionId": "MTc0MTcxNDg2MzE5MTk4NjAwMA"
+#             },
+#             "resourceType": "DocumentReference",
+#             "type": {
+#                 "coding": [
+#                     {
+#                         "code": "MAF",
+#                         "display": "MAF",
+#                         "system": "https://gdc.cancer.gov/data_format"
+#                     }
+#                 ]
+#             }
+#         }
+#     ]
+
+
 @fixture
 def patients(research_study_id):
     return [
@@ -542,10 +628,28 @@ def conditions():
 
 
 @fixture
-def document_references():
+def document_references(research_study_id):
     return [
         {
             "resourceType": "DocumentReference",
+            "extension": [
+                {
+                    "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
+                    "valueReference": {
+                        "reference": f"ResearchStudy/{research_study_id}"
+                    }
+                },
+                {
+                    "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+                    "valueQuantity": {
+                        "code": "bytes",
+                        "system": "http://unitsofmeasure.org",
+                        "unit": "bytes",
+                        "value": 12345
+                    }
+                }
+            ],
+
             "id": "ec8b85b7-7965-5d0e-a106-e9b1e94f53c2",
             "identifier": [
                 {
@@ -633,6 +737,23 @@ def document_references():
         },
         {
             "resourceType": "DocumentReference",
+            "extension": [
+                {
+                    "url": "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study",
+                    "valueReference": {
+                        "reference": f"ResearchStudy/{research_study_id}"
+                    }
+                },
+                {
+                    "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+                    "valueQuantity": {
+                        "code": "bytes",
+                        "system": "http://unitsofmeasure.org",
+                        "unit": "bytes",
+                        "value": 56789
+                    }
+                }
+            ],
             "id": "23dff4b1-f3c2-52b2-ad65-37a035e00662",
             "identifier": [
                 {
