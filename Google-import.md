@@ -1,6 +1,10 @@
 
 ## Transform data
 
+* TL/DR:
+
+  * See scripts/gs-import-all.sh
+
 * R5 to R4
 The Google Healthcare API only supports R4, so we need to transform the data from R5 to R4.
 [R5 support expected first half of 2025](https://groups.google.com/g/gcp-healthcare-discuss/c/DAua7sqmSl8/m/h1-nnpClBwAJ)
