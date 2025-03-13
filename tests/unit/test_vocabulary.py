@@ -141,6 +141,7 @@ def test_vocabulary_collector_document_references(document_references, research_
     assert len(observations) == 1
     by_path = defaultdict(list)
     observation = observations[0]
+    assert len(observation["component"]) == 10
     for component in observation["component"]:
         for coding in component["code"]["coding"]:
             if coding["system"] == "http://fhir-aggregator.org/fhir/CodeSystem/vocabulary/path":

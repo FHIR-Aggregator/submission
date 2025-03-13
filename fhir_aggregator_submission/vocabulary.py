@@ -186,7 +186,7 @@ def create_observation_component(code_dict, extension_dict):
                 }
             ]
         },
-        "component": []
+        "component": [],
     }
 
     for path, value_dict in code_dict.items():
@@ -227,7 +227,6 @@ def create_observation_component(code_dict, extension_dict):
                         },
                     ]
                 },
-
             }
             v = value
             value_x = None
@@ -296,6 +295,7 @@ class VocabularyCollector:
 
     def collect(self, resource: dict[str, Any]) -> dict[str, Any]:
         """Collect display values from a resource."""
+
         research_study_id = get_research_study_id(resource)
         coding_dict, extension_dict = self.research_study_vocabularies[
             research_study_id

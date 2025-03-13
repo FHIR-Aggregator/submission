@@ -300,6 +300,13 @@ def prep(input_path, output_path, transformers, seed, fhir_version):
                 spinner.text = f"Processing {resource}"
                 for line in infile:
                     resource = orjson.loads(line.strip())
+
+                    if "vocabulary" in transformers:
+                        # skip _existing_ vocabulary  Observations
+                        if resource["resourceType"] == "Observation":
+                            if resource["code"]["coding"][0]["code"] == "vocabulary":
+                                continue
+
                     for transformer in transformer_map.values():
                         resource = transformer(
                             resource=resource,
