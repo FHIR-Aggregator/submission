@@ -3,6 +3,8 @@ scripts/gs-bulk-import-request-IG.sh
 scripts/gs-bulk-import-request-FHIRIZED-CELLOSAURUS.sh
 scripts/gs-bulk-import-request-FHIRIZED-GDC.sh
 scripts/gs-bulk-import-request-FHIRIZED-HTAN.sh
+scripts/gs-bulk-import-request-FHIRIZED-1KGENOMES.sh
+scripts/gs-bulk-import-request-PATCHES.sh
 while true; do
   result=$(gcloud healthcare operations list --dataset=$DATASET_ID --location=$LOCATION --filter 'done!=true' --format json)
   if [ "$result" == "[]" ]; then

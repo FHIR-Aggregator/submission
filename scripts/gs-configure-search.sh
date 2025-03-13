@@ -1,4 +1,4 @@
-
+# see https://cloud.google.com/healthcare-api/docs/reference/rest/v1beta1/projects.locations.datasets.fhirStores/configureSearch
 set -euo pipefail
 : "${FHIR_STORE_ID:?Need to set FHIR_STORE_ID}"
 : "${DATASET_ID:?Need to set DATASET_ID}"
