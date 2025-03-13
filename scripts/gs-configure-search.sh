@@ -23,3 +23,14 @@ curl -X POST     -H "Authorization: Bearer $(gcloud auth application-default pri
           "http://fhir-aggregator.org/fhir/SearchParameter/specimen-part-of-study"
         ],
     }'     "https://healthcare.googleapis.com/v1beta1/projects/$PROJECT_ID/locations/$LOCATION/datasets/$DATASET_ID/fhirStores/$FHIR_STORE_ID:configureSearch"
+
+
+curl -X POST     -H "Authorization: Bearer $(gcloud auth application-default print-access-token)"     -H "Content-Type: application/json; charset=utf-8"     --data '{
+        "canonicalUrls": [
+          "http://hl7.org/fhir/us/core/SearchParameter/us-core-ethnicity",
+          "http://hl7.org/fhir/SearchParameter/patient-extensions-Patient-age",
+          "http://hl7.org/fhir/us/core/StructureDefinition/us-core-birthsex",
+          "http://hl7.org/fhir/us/core/SearchParameter/us-core-race"
+        ]
+    }'     "https://healthcare.googleapis.com/v1beta1/projects/$PROJECT_ID/locations/$LOCATION/datasets/$DATASET_ID/fhirStores/$FHIR_STORE_ID:configureSearch"
+
