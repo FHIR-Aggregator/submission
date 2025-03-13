@@ -17,14 +17,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel black mypy pytest pytest-cov pytest_httpx
-#          pip install .
+          pip install setuptools wheel black mypy pytest pytest-cov pytest_httpx pandas git+https://github.com/FHIR-Aggregator/fhir-query.git
+          pip install .
 
       - name: Run Black
-        run: black --check --verbose scripts/
+        run: black --check --verbose fhir_aggregator_submission/
 
       - name: Run Mypy
-        run: mypy --ignore-missing-imports  scripts/
+        run: mypy --ignore-missing-imports  fhir_aggregator_submission/
 
       - name: Run Pytest
         run: pytest

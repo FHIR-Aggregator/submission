@@ -17,11 +17,28 @@ def transform_documentreference(resource):
     Returns:
     dict: The transformed DocumentReference resource.
     """
-    del resource["version"]
+    if "version" in resource:
+        del resource["version"]
     if "content" in resource:
         for content in resource["content"]:
             if "profile" in content:
                 content["format"] = content.pop("profile")[0]["valueCoding"]
+            if "attachment" in content and "size" in content["attachment"]:
+                if "extension" not in resource:
+                    resource["extension"] = []
+                resource["extension"].append(
+                    {
+                        "url": "https://nih-ncpi.github.io/ncpi-fhir-ig-2/StructureDefinition/file-size",
+                        "valueQuantity": {
+                            "value": int(content["attachment"]["size"]),
+                            "unit": "bytes",
+                            "system": "http://unitsofmeasure.org",
+                            "code": "bytes",
+                        },
+                    }
+                )
+                del content["attachment"]["size"]
+
     if "subject" in resource and "reference" in resource["subject"]:
         if "Specimen" in resource["subject"]["reference"]:
             return None
@@ -58,7 +75,8 @@ def transform_encounter(resource):
             ref["reference"] for ref in resource.pop("reference", [])
         ]
     if "class" in resource:
-        resource["class"] = resource["class"]["coding"][0]
+        if "coding" in resource["class"]:
+            resource["class"] = resource["class"]["coding"][0]
     else:
         resource["class"] = {"code": "NONAC", "display": "inpatient non-acute"}
     resource["status"] = "finished"
@@ -75,9 +93,12 @@ def transform_group(resource):
     Returns:
     dict: The transformed Group resource.
     """
-    del resource["membership"]
-    resource["actual"] = True
-    resource["type"] = "person"
+    if "membership" in resource:
+        del resource["membership"]
+    if "actual" not in resource:
+        resource["actual"] = True
+    if "type" not in resource:
+        resource["type"] = "person"
     return resource
 
 
@@ -154,7 +175,8 @@ def transform_researchsubject(resource):
     Returns:
     dict: The transformed ResearchSubject resource.
     """
-    resource["individual"] = resource.pop("subject")
+    if "subject" in resource:
+        resource["individual"] = resource.pop("subject")
     resource["status"] = "on-study"
     return resource
 
@@ -171,10 +193,44 @@ def transform_specimen(resource):
     """
     if "processing" in resource:
         for process in resource["processing"]:
+            if "method" in process:
+                process["procedure"] = process.pop("method")
+    if "collection" in resource:
+        if "procedure" in resource["collection"]:
+            del resource["collection"]["procedure"]
+    return resource
+
+
+def transform_imaging_study(resource):
+    """
+    Cleanup transform_observation.
+
+    Parameters:
+    resource (dict): The Specimen resource to transform.
+
+    Returns:
+    dict: The transformed Specimen resource.
+    """
+    if "processing" in resource:
+        for process in resource["processing"]:
             process["procedure"] = process.pop("method")
     if "collection" in resource:
         if "procedure" in resource["collection"]:
             del resource["collection"]["procedure"]
+    return resource
+
+
+def transform_medication(resource):
+    """
+    Transform a Medication resource from R5 to R4.
+
+    Parameters:
+    resource (dict): The Medication resource to transform.
+    """
+    if "code" in resource and "coding" in resource["code"]:
+        resource["code"]["coding"][0]["system"] = resource["code"]["coding"][0][
+            "system"
+        ].replace("'", "")
     return resource
 
 
@@ -195,6 +251,7 @@ def dispatch_transformation(resource: dict, *args, **kwargs) -> dict | None:
         "Group": transform_group,
         "ImagingStudy": transform_imagingstudy,
         "MedicationAdministration": transform_medicationadministration,
+        "Medication": transform_medication,
         "ResearchStudy": transform_researchstudy,
         "ResearchSubject": transform_researchsubject,
         "Specimen": transform_specimen,
