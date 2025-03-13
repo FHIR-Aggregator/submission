@@ -78,7 +78,7 @@ def patients(research_study_id):
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race",
-                    "valueString": "white",
+                    "valueString": "asian",
                 },
                 {
                     "url": "http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity",

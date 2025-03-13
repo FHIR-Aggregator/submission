@@ -25,20 +25,30 @@ def test_vocabulary_collector(patients, research_study):
 
     from fhir_query import vocabulary
 
-    bundle = {"entry": [{"resource": observation}, {"resource": research_study}]}
+    bundle = {"link": [{"url": "http://example.com"}], "entry": [{"resource": observation}, {"resource": research_study}]}
     simplified = vocabulary.vocabulary_simplifier(bundle)
+    assert sorted([_['code'] for _ in simplified if _['code'] in ['white', 'asian']]) == ['asian', 'white']
     df = pd.DataFrame(simplified)
     df.to_csv(sys.stdout, sep="\t", index=False)
 
-    row = df.loc[
+    rows = df.loc[
         df["extension_url"]
         == "http://hl7.org/fhir/SearchParameter/patient-extensions-Patient-age"
     ]
-    row_dict = row.to_dict(orient="records")[0]
+    row_list = rows.to_dict(orient="records")
+    assert len(row_list) == 1
+    row_dict = row_list[0]
     print(row_dict)
 
     assert row_dict["low"] == 55
     assert row_dict["high"] == 63
+
+    rows = df.loc[
+        df["extension_url"]
+        == "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+    ]
+    row_list = rows.to_dict(orient="records")
+    assert len(row_list) == 2
 
 
 def test_vocabulary_patient(patients):
@@ -59,7 +69,8 @@ def test_vocabulary_patient_extension(patients):
             "F": {"count": 1, "valueCode": "F"},
         },
         "Patient.extension~http://hl7.org/fhir/us/core/StructureDefinition/us-core-race": {
-            "white": {"count": 2, "valueString": "white"}
+            "white": {"count": 1, "valueString": "white"},
+            "asian": {"count": 1, "valueString": "asian"}
         },
         "Patient.extension~http://hl7.org/fhir/us/core/StructureDefinition/us-core-ethnicity": {
             "not hispanic or latino": {
