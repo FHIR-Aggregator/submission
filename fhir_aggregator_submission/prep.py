@@ -343,75 +343,136 @@ def prep(input_path, output_path, transformers, seed, fhir_version):
     emitters.close()
 
 
+def extract_researchstudy_id(entity: dict) -> str:
+    """
+    Extract the ResearchStudy ID from the 'part-of-study' extension in a FHIR resource.
+
+    Parameters:
+        entity (dict): A FHIR resource as a dictionary.
+
+    Returns:
+        str: The extracted ResearchStudy ID (without the "ResearchStudy/" prefix) if found,
+             otherwise an empty string.
+    """
+    part_of_study_url = (
+        "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    )
+    extensions = entity.get("extension", [])
+    for ext in extensions:
+        if ext.get("url") == part_of_study_url:
+            reference = ext.get("valueReference", {}).get("reference", "")
+            if reference.startswith("ResearchStudy/"):
+                return reference.split("ResearchStudy/")[1]
+            return reference
+    return ""
+
+
 def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
     """Create assays from the input files [DocumentReference, Group, Specimen]."""
-    document_reference = pathlib.Path(input_path) / "DocumentReference.ndjson"
-    with open(document_reference, "r") as doc_file:
+    document_reference_path = pathlib.Path(input_path) / "DocumentReference.ndjson"
+    with open(document_reference_path, "r") as doc_file:
         document_references = [orjson.loads(line.strip()) for line in doc_file]
-    with open(pathlib.Path(input_path) / "Group.ndjson", "r") as group_file:
-        groups: list[dict] = [orjson.loads(line.strip()) for line in group_file]
-    specimen = pathlib.Path(input_path) / "Specimen.ndjson"
-    with open(specimen, "r") as specimen_file:
+
+    # only load and process groups if the file exists.
+    group_file_path = pathlib.Path(input_path) / "Group.ndjson"
+    if group_file_path.exists():
+        with open(group_file_path, "r") as group_file:
+            groups: list[dict] = [orjson.loads(line.strip()) for line in group_file]
+    else:
+        print("Group file not found. Skipping group processing.")
+        groups = []
+
+    specimen_path = pathlib.Path(input_path) / "Specimen.ndjson"
+    with open(specimen_path, "r") as specimen_file:
         specimens = {
             spec["id"]: spec
             for spec in (orjson.loads(line.strip()) for line in specimen_file)
         }
-    # Index document references by group
+
+    if document_references:
+        first_doc = document_references[0]
+        research_study_id = extract_researchstudy_id(first_doc)
+        print(
+            f"First DocumentReference ID: {first_doc.get('id')} references ResearchStudy ID: {research_study_id}"
+        )
+    else:
+        print("No DocumentReference found.")
+
     document_references_by_group: dict[str, list[dict]] = {}
     for doc in document_references:
         group_id = doc["subject"]["reference"].split("/")[1]
         if group_id not in document_references_by_group:
             document_references_by_group[group_id] = []
         document_references_by_group[group_id].append(doc)
+
     assays = []
-    # find  documents that are part of a group that has a specimen
-    # R4B does not support groups of specimens
-    groups_with_specimen = set()
-    for group in groups:
 
-        patient_reference = None
-        specimen_references = []
-        # find the specimen references in the group
-        for member in group.get("member", []):
-            if "reference" in member["entity"]:
-                if member["entity"]["reference"].startswith("Specimen/"):
-                    specimen_id = member["entity"]["reference"].split("/")[1]
-                    specimen_references.append(member["entity"]["reference"])
-                    if specimen_id in specimens:
-                        patient_reference = specimens[specimen_id]["subject"][
-                            "reference"
-                        ]
+    # process groups only if they exist
+    if groups:
+        groups_with_specimen = set()
+        for group in groups:
+            patient_reference = None
+            specimen_references = []
+            # find the specimen references in the group
+            for member in group.get("member", []):
+                if "reference" in member["entity"]:
+                    if member["entity"]["reference"].startswith("Specimen/"):
+                        specimen_id = member["entity"]["reference"].split("/")[1]
+                        specimen_references.append(member["entity"]["reference"])
+                        if specimen_id in specimens:
+                            patient_reference = specimens[specimen_id]["subject"][
+                                "reference"
+                            ]
 
-        # skip if no patient or specimen references
-        if not patient_reference or not specimen_references:
+            # skip if no patient or specimen references
+            if not patient_reference or not specimen_references:
+                continue
+
+            groups_with_specimen.add(group["id"])
+
+            # get all the docs for the group
+            assay_documents = document_references_by_group.get(group["id"], [])
+
+            assay_id = group["id"]  # for now, use the group id as the assay id
+            research_study_id = extract_researchstudy_id(group)
+            assert (
+                research_study_id
+            ), f"Group ID: {assay_id} does not reference a ResearchStudy"
+
+            assay_dict = create_assay_refactor_docs(
+                assay_id,
+                patient_reference,
+                specimen_references,
+                assay_documents,
+                research_study_id,
+                fhir_version,
+            )
+            assay_dict["extension"] = group.get("extension", [])
+            assays.append(assay_dict)
+
+        groups = [group for group in groups if group["id"] not in groups_with_specimen]
+
+        docs_with_non_patient_subject = [
+            (doc["id"], doc["subject"]["reference"])
+            for doc in document_references
+            if not doc["subject"]["reference"].startswith("Patient/")
+        ]
+        assert len(docs_with_non_patient_subject) == len(
+            groups
+        ), f"Documents have groups with non-patient subject: {docs_with_non_patient_subject}"
+
+    for doc in document_references:
+        resource = doc
+        research_study_id = extract_researchstudy_id(resource)
+        if not research_study_id:
+            print(
+                f"Warning: Resource with ID {resource.get('id')} does not reference a ResearchStudy. Skipping assay creation."
+            )
             continue
 
-        groups_with_specimen.add(group["id"])
-
-        # get all the docs for the group
-        assay_documents = [
-            doc for doc in document_references_by_group.get(group["id"], [])
-        ]
-
-        # create the assay
-        assay_id = group["id"]  # for now, use the group id as the assay id
-        assay_dict = create_assay_refactor_docs(
-            assay_id,
-            patient_reference,
-            specimen_references,
-            assay_documents,
-            fhir_version,
-        )
-        assay_dict["extension"] = group.get("extension", [])
-        assays.append(assay_dict)
-    # remove groups with Specimen members
-    groups = [group for group in groups if group["id"] not in groups_with_specimen]
-    # find documents that have a specimen as subject
-    for doc in document_references:
         if doc["subject"]["reference"].startswith("Specimen/"):
-            specimen_references = []
+            specimen_references = [doc["subject"]["reference"]]
             specimen_id = doc["subject"]["reference"].split("/")[1]
-            specimen_references.append(doc["subject"]["reference"])
             patient_reference = specimens[specimen_id]["subject"]["reference"]
             assert (
                 patient_reference
@@ -423,30 +484,22 @@ def create_assays(fhir_version, input_path) -> Generator[dict, None, None]:
                 patient_reference,
                 specimen_references,
                 assay_documents,
+                research_study_id,
                 fhir_version,
             )
             assert doc["subject"]["reference"].startswith(
                 "Patient/"
             ), f"Document subject is not a patient: {doc['subject']['reference']}"
             assays.append(assay_dict)
-    docs_with_non_patient_subject = [
-        (doc["id"], doc["subject"]["reference"])
-        for doc in document_references
-        if not doc["subject"]["reference"].startswith("Patient/")
-    ]
-    assert len(docs_with_non_patient_subject) == len(
-        groups
-    ), f"Documents have groups with non-patient subject: {docs_with_non_patient_subject}"
 
-    # write the assays to file
-    for _ in assays:
-        yield _
+    for resource in assays:
+        yield resource
 
-    for _ in document_references:
-        yield _
+    for resource in document_references:
+        yield resource
 
-    for _ in groups:
-        yield _
+    for resource in groups:
+        yield resource
 
 
 def update_mime_type(doc: dict) -> dict:
@@ -474,6 +527,7 @@ def create_assay_refactor_docs(
     patient_reference: str,
     specimen_references: list[str],
     assay_documents: list[dict],
+    research_study_id: str,
     fhir_version="R4",
 ) -> dict:
     """
@@ -530,6 +584,25 @@ def create_assay_refactor_docs(
         assay_dict["code"]["concept"]["coding"] = assay_dict["code"]["coding"]
         del assay_dict["code"]["coding"]
 
+    assay_dict.setdefault("extension", [])
+
+    part_of_study_url = (
+        "http://fhir-aggregator.org/fhir/StructureDefinition/part-of-study"
+    )
+
+    assert (
+        research_study_id
+    ), f"Assay ID: {assay_id} doesn't have a reference to ResearchStudy"
+
+    researchstudy_reference = f"ResearchStudy/{research_study_id}"
+    part_of_study_extension = {
+        "url": part_of_study_url,
+        "valueReference": {"reference": researchstudy_reference},
+    }
+
+    if not any(ext.get("url") == part_of_study_url for ext in assay_dict["extension"]):
+        assay_dict["extension"].append(part_of_study_extension)
+
     # TODO - move this to its own function
     # now modify the document.subject to the patient and add the assay to the context.related
     for doc in assay_documents:
@@ -546,13 +619,15 @@ def create_assay_refactor_docs(
 
             # set size to a string
             attachment = doc["content"][0]["attachment"]
-            if not isinstance(attachment["size"], str):
+            if "size" in attachment.keys() and not isinstance(attachment["size"], str):
                 attachment["size"] = str(attachment["size"])
         else:
             # make it a R4B document
             # these fields don't exist in R4B
-            del doc["version"]
-            del doc["content"][0]["profile"]
+            if "version" in doc.keys():
+                del doc["version"]
+            if "profile" in doc["content"][0].keys():
+                del doc["content"][0]["profile"]
 
             # set reference to Assay in context.related
             if "context" not in doc:
