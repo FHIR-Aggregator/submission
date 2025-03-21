@@ -49,7 +49,7 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
 1. **Run the preparation script on your data:**
 
     ```bash
-    fa_submission prep --help
+    fa_submit prep --help
    Usage: fa_submit prep [OPTIONS] INPUT_PATH OUTPUT_PATH
    
      Run a set of transformations on the input META directory.
@@ -58,7 +58,7 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
      OUTPUT_PATH the output META directory
    
    Options:
-     --transformers TEXT  CSV Transformation steps.  Known transformations:
+     --transformers TEXT  CSV Transformation steps. Known transformations:
                           [assay,part-of,r4,validate,validate_references,
                           reseed], default:assay,r4,part-of,vocabulary,validate
      --seed TEXT          Reseed all references with the new seed
@@ -73,7 +73,7 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
     - `validate`: Validates the transformed files
       - `validate_references`: Validates the references in the transformed files
     - `reseed`: Reseeds all resource.id and references to a new UUID based on the seed value
-      - `seed`: The seed value to use for the reseed operation.
+      - `--seed`: A flag to assign a seed value for reseeding. `reseed` must be specified as a transformation step to use this flag.
 
 
 ### Uploading Data to bucket
@@ -100,5 +100,3 @@ Before running the `scripts/prep.py` script, ensure you have the following insta
 ```bash
 python scripts/fhir-inventory.py count-resources 
 ```
- 
-
