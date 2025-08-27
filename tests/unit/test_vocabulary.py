@@ -24,7 +24,7 @@ def test_vocabulary_collector(patients, research_study):
     assert observation["resourceType"] == "Observation"
     assert observation["code"]["coding"][0]["code"] == "vocabulary"
 
-    from fhir_query import vocabulary
+    from fhir_aggregator_client import vocabulary
 
     bundle = {"link": [{"url": "http://example.com"}], "entry": [{"resource": observation}, {"resource": research_study}]}
     simplified = vocabulary.vocabulary_simplifier(bundle)
@@ -148,7 +148,7 @@ def test_vocabulary_collector_document_references(document_references, research_
                 by_path[coding["code"]].append(component)
     assert len(by_path['DocumentReference.type']) == 2, ("expected 2 DocumentReference.type", by_path['DocumentReference.type'])
 
-    from fhir_query import vocabulary
+    from fhir_aggregator_client import vocabulary
 
     bundle = {"link": [{"url": "http://example.com"}], "entry": [{"resource": observation}, {"resource": research_study}]}
     simplified = vocabulary.vocabulary_simplifier(bundle)
