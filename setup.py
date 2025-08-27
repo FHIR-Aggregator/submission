@@ -8,7 +8,7 @@ def parse_requirements(filename: str) -> list[str]:
 
 setup(
     name="fhir_aggregator_submission",
-    version="0.1.0",
+    version="0.2.1",
     packages=find_packages(),
     install_requires=parse_requirements("requirements.txt"),
     entry_points={
